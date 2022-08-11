@@ -10,19 +10,85 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  //Receber username pelo header
+  const { username }= request.headers;
+
+  // Verificar se existe usuário ou não 
+  const user = users.find(user => user.username === username)
+
+  if (!!user === true) {
+    // Se existir passar usuário pelo request
+    request.user = user
+  
+    return next()
+  } else {
+    return response.status(404).json({
+      error: 'Usuário não existe'
+    })
+  }
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  // Recebe o usuário
+  const user = request.user
+
+  // Se - de 10 todos ou plano pro chama next()
+  if (user.todos.length < 10 || user.pro === true) {
+    next()
+  } else {
+    return response.status(403).json({error: 'Você precisa ser pro para escrever mais todos'})
+  }
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  // Recebe username, header
+  const { username } = request.headers
+  // id, parâmetros
+  const { id } = request.params
+  const regex = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+
+  // Validar usuário
+  const user = users.find(user => user.username === username)
+
+  if (!!user) {
+    // Validar que id seja uuid e que pertença a um todo do usuário informado
+    const todo = user.todos.find(todo => todo.id === id)
+    if (regex.test(id) === true) {
+      if (!!todo === true){
+        // Repassar todo e usuário
+        request.todo = todo
+        request.user = user
+  
+        return next()
+      } else {
+        return response.status(404).json({error: 'Todo não existe'})
+      }
+    } else {
+      return response.status(400).json({error: 'Id não é uuid'})
+    }
+  } else {
+    return response.status(404).json({error: 'Usuário não existe'})
+  }
+  
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  // id, parâmetro
+  const { id } = request.params
+
+  // Buscar usuário 
+  const user = users.find(user => user.id === id)
+
+  if (!!user === true) {
+    // Repassar usuário
+    request.user = user
+
+    return next()
+  } else {
+    return response.status(404).json({
+      error: 'Usuário não existe'
+    })
+  }
 }
 
 app.post('/users', (request, response) => {
